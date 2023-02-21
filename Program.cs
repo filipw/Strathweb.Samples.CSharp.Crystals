@@ -77,7 +77,7 @@ static void RunKyber()
     Console.WriteLine($"Alice's Secret: {PrettyPrint(aliceSecret)}");
 
     // Compare secrets
-    var equal = bobSecret == aliceSecret;
+    var equal = bobSecret.SequenceEqual(aliceSecret);
     Console.WriteLine($"Secrets equal? {equal}");
     Console.WriteLine("");
 }
