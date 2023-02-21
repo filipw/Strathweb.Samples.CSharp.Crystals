@@ -11,7 +11,7 @@ static void RunDilithium()
 {
     Console.WriteLine("***************** DILITHIUM *******************");
     var data = Hex.Encode(Encoding.ASCII.GetBytes("Hello, Dilithium!"));
-    Console.WriteLine("Message: " + PrettyPrint(data));
+    Console.WriteLine($"Message: {PrettyPrint(data)}");
 
     var random = new SecureRandom();
     var keyGenParameters = new DilithiumKeyGenerationParameters(random, DilithiumParameters.Dilithium3);
@@ -25,14 +25,14 @@ static void RunDilithium()
     var privateKey = (DilithiumPrivateKeyParameters)keyPair.Private;
     var pubEncoded = publicKey.GetEncoded();
     var privateEncoded = privateKey.GetEncoded();
-    Console.WriteLine("Public key: " + PrettyPrint(pubEncoded));
-    Console.WriteLine("Private key: " + PrettyPrint(privateEncoded));
+    Console.WriteLine($"Public key: {PrettyPrint(pubEncoded)}");
+    Console.WriteLine($"Private key: {PrettyPrint(privateEncoded)}");
 
     // sign
     var alice = new DilithiumSigner();
     alice.Init(true, privateKey);
     var signature = alice.GenerateSignature(data);
-    Console.WriteLine("Signature: " + PrettyPrint(signature));
+    Console.WriteLine($"Signature: {PrettyPrint(signature)}");
 
     // verify signature
     var bob = new DilithiumSigner();
@@ -46,7 +46,7 @@ static void RunKyber()
 {
     Console.WriteLine("***************** KYBER *******************");
     var random = new SecureRandom();
-    var keyGenParameters = new KyberKeyGenerationParameters(random, KyberParameters.kyber1024);
+    var keyGenParameters = new KyberKeyGenerationParameters(random, KyberParameters.kyber768);
     var kyberKeyPairGenerator = new KyberKeyPairGenerator();
     kyberKeyPairGenerator.Init(keyGenParameters);
 
@@ -58,23 +58,23 @@ static void RunKyber()
     var alicePrivate = (KyberPrivateKeyParameters)aliceKeyPair.Private;
     var pubEncoded = alicePublic.GetEncoded();
     var privateEncoded = alicePrivate.GetEncoded();
-    Console.WriteLine("Alice's Public key: " + PrettyPrint(pubEncoded));
-    Console.WriteLine("Alice's Private key: " + PrettyPrint(privateEncoded));
+    Console.WriteLine($"Alice's Public key: {PrettyPrint(pubEncoded)}");
+    Console.WriteLine($"Alice's Private key: {PrettyPrint(privateEncoded)}");
 
     // Bob encapsulates a new shared secret using Alice's public key
     var bobKyberKemGenerator = new KyberKemGenerator(random);
     var encapsulatedSecret = bobKyberKemGenerator.GenerateEncapsulated(alicePublic);
     var bobSecret = encapsulatedSecret.GetSecret();
-    Console.WriteLine("Bob's Secret: " + PrettyPrint(bobSecret));
+    Console.WriteLine($"Bob's Secret: {PrettyPrint(bobSecret)}");
 
     // cipher text produced by Bob and sent to Alice
     var cipherText = encapsulatedSecret.GetEncapsulation();
-    Console.WriteLine("Cipher text: " + PrettyPrint(cipherText));
+    Console.WriteLine($"Cipher text: {PrettyPrint(cipherText)}");
 
     // Alice decapsulates a new shared secret using Alice's private key
     var aliceKemExtractor = new KyberKemExtractor(alicePrivate);
     var aliceSecret = aliceKemExtractor.ExtractSecret(cipherText);
-    Console.WriteLine("Alice's Secret: " + PrettyPrint(aliceSecret));
+    Console.WriteLine($"Alice's Secret: {PrettyPrint(aliceSecret)}");
 
     // Compare secrets
     var equal = bobSecret == aliceSecret;
