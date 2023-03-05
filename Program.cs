@@ -10,7 +10,11 @@ RunDilithium();
 static void RunDilithium()
 {
     Console.WriteLine("***************** DILITHIUM *******************");
-    var data = Hex.Encode(Encoding.ASCII.GetBytes("Hello, Dilithium!"));
+    
+    var raw = "Hello, Dilithium!";
+    Console.WriteLine($"Raw Message: {raw}");
+
+    var data = Hex.Encode(Encoding.ASCII.GetBytes(raw));
     Console.WriteLine($"Message: {PrettyPrint(data)}");
 
     var random = new SecureRandom();
@@ -45,8 +49,10 @@ static void RunDilithium()
 static void RunKyber() 
 {
     Console.WriteLine("***************** KYBER *******************");
+    
     var random = new SecureRandom();
     var keyGenParameters = new KyberKeyGenerationParameters(random, KyberParameters.kyber768);
+    
     var kyberKeyPairGenerator = new KyberKeyPairGenerator();
     kyberKeyPairGenerator.Init(keyGenParameters);
 
