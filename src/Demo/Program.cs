@@ -43,7 +43,83 @@ static void RunDilithium()
     bob.Init(false, publicKey);
     var verified = bob.VerifySignature(data, signature);
     Console.WriteLine($"Successfully verified? {verified}");
-    Console.WriteLine("");
+
+    // Console.WriteLine("Private key lengths");
+    // Console.WriteLine($"Rho: {privateKey.Rho.Length}");
+    // Console.WriteLine($"K: {privateKey.K.Length}");
+    // Console.WriteLine($"Tr: {privateKey.Tr.Length}");
+    // Console.WriteLine($"S1: {privateKey.S1.Length}");
+    // Console.WriteLine($"S2: {privateKey.S2.Length}");
+    // Console.WriteLine($"T0: {privateKey.T0.Length}");
+    
+    var aliceRecovered = new DilithiumSigner();
+    var recoveredKey = RecoverPrivateKeyFromExport(privateKey.GetEncoded(), DilithiumParameters.Dilithium3);
+    aliceRecovered.Init(true, recoveredKey);
+    var signature2 = aliceRecovered.GenerateSignature(data);
+    Console.WriteLine($"Signature (recovered): {PrettyPrint(signature2)}");
+    
+    // verify signature
+    var bobReVerified = bob.VerifySignature(data, signature2);
+    Console.WriteLine($"Successfully verified (recovered) signature? {verified}");
+}
+
+static DilithiumPrivateKeyParameters RecoverPrivateKeyFromExport(byte[] encodedPrivateKey, DilithiumParameters dilithiumParameters)
+{
+    const int seedBytes = 32;
+    int s1Length;
+    int s2Length;
+    int t0Length;
+
+    if (dilithiumParameters == DilithiumParameters.Dilithium2)
+    {
+        s1Length = 4 * 96; 
+        s2Length = 4 * 96;
+        t0Length = 4 * 416;
+    } 
+    else if (dilithiumParameters == DilithiumParameters.Dilithium3)
+    {
+        s1Length = 5 * 128;
+        s2Length = 6 * 128;
+        t0Length = 6 * 416;
+    } 
+    else if (dilithiumParameters == DilithiumParameters.Dilithium5)
+    {
+        s1Length = 7 * 96;
+        s2Length = 8 * 96;
+        t0Length = 8 * 416;
+    }
+    else
+    {
+        throw new NotSupportedException("Unsupported mode");
+    }
+    
+    var rho = new byte[seedBytes]; // SeedBytes length
+    var k = new byte[seedBytes]; // SeedBytes length
+    var tr = new byte[seedBytes]; // SeedBytes length
+    var s1 = new byte[s1Length]; // L * PolyEtaPackedBytes
+    var s2 = new byte[s2Length]; // K * PolyEtaPackedBytes
+    var t0 = new byte[t0Length]; // K * PolyT0PackedBytes
+
+    var offset = 0;
+    Array.Copy(encodedPrivateKey, offset, rho, 0, seedBytes);
+    offset += seedBytes;
+    Array.Copy(encodedPrivateKey, offset, k, 0, seedBytes);
+    offset += seedBytes;
+    Array.Copy(encodedPrivateKey, offset, tr, 0, seedBytes);
+    offset += seedBytes;
+    Array.Copy(encodedPrivateKey, offset, s1, 0, s1Length);
+    offset += s1Length;
+    Array.Copy(encodedPrivateKey, offset, s2, 0, s2Length);
+    offset += s2Length;
+    Array.Copy(encodedPrivateKey, offset, t0, 0, t0Length);
+    offset += t0Length;
+    
+    // Take all remaining bytes as t1
+    var remainingLength = encodedPrivateKey.Length - offset;
+    var t1 = new byte[remainingLength];
+    Array.Copy(encodedPrivateKey, offset, t1, 0, remainingLength);
+
+    return new DilithiumPrivateKeyParameters(dilithiumParameters, rho, k, tr, s1, s2, t0, t1);
 }
 
 static void RunKyber() 
