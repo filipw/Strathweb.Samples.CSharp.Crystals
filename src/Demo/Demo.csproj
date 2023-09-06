@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="BouncyCastle.Cryptography" Version="2.2.1" />
+    <PackageReference Include="spectre.console" Version="0.47.0" />
   </ItemGroup>
 
 </Project>
