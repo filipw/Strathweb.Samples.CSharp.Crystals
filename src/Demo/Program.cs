@@ -183,6 +183,16 @@ static void RunKyber()
     Console.WriteLine("");
 }
 
+static void PrintPanel(string header, string[] data)
+{
+    var content = string.Join(Environment.NewLine, data);
+    var panel = new Panel(content)
+    {
+        Header = new PanelHeader(header)
+    };
+    AnsiConsole.Write(panel);
+}
+
 static string PrettyPrint(byte[] bytes) {
     var base64 = Convert.ToBase64String(bytes);
     if (base64.Length > 50)
