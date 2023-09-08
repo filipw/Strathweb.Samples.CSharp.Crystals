@@ -34,7 +34,7 @@ static void RunDilithium()
     Console.WriteLine($"Raw Message: {raw}");
 
     var data = Hex.Encode(Encoding.ASCII.GetBytes(raw));
-    Console.WriteLine($"Message: {PrettyPrint(data)}");
+    PrintPanel("Message", new[] { $"Raw: {raw}", $"Encoded: {data.PrettyPrint()}" });
 
     var random = new SecureRandom();
     var keyGenParameters = new DilithiumKeyGenerationParameters(random, DilithiumParameters.Dilithium3);
@@ -48,38 +48,29 @@ static void RunDilithium()
     var privateKey = (DilithiumPrivateKeyParameters)keyPair.Private;
     var pubEncoded = publicKey.GetEncoded();
     var privateEncoded = privateKey.GetEncoded();
-    Console.WriteLine($"Public key: {PrettyPrint(pubEncoded)}");
-    Console.WriteLine($"Private key: {PrettyPrint(privateEncoded)}");
+    PrintPanel("Keys", new[] { $":unlocked: Public: {pubEncoded.PrettyPrint()}", $":locked: Private: {privateEncoded.PrettyPrint()}" });
 
     // sign
     var alice = new DilithiumSigner();
     alice.Init(true, privateKey);
     var signature = alice.GenerateSignature(data);
-    Console.WriteLine($"Signature: {PrettyPrint(signature)}");
+    PrintPanel("Signature", new[] { $":pen: {signature.PrettyPrint()}" });
 
     // verify signature
     var bob = new DilithiumSigner();
     bob.Init(false, publicKey);
     var verified = bob.VerifySignature(data, signature);
-    Console.WriteLine($"Successfully verified? {verified}");
+    PrintPanel("Verification", new[] { $"{(verified ? ":check_mark_button:" : ":cross_mark:")} Verified!" });
 
-    // Console.WriteLine("Private key lengths");
-    // Console.WriteLine($"Rho: {privateKey.Rho.Length}");
-    // Console.WriteLine($"K: {privateKey.K.Length}");
-    // Console.WriteLine($"Tr: {privateKey.Tr.Length}");
-    // Console.WriteLine($"S1: {privateKey.S1.Length}");
-    // Console.WriteLine($"S2: {privateKey.S2.Length}");
-    // Console.WriteLine($"T0: {privateKey.T0.Length}");
-    
     var aliceRecovered = new DilithiumSigner();
     var recoveredKey = RecoverPrivateKeyFromExport(privateKey.GetEncoded(), DilithiumParameters.Dilithium3);
     aliceRecovered.Init(true, recoveredKey);
     var signature2 = aliceRecovered.GenerateSignature(data);
-    Console.WriteLine($"Signature (recovered): {PrettyPrint(signature2)}");
+    PrintPanel("Signature (from key loaded from JWK)", new[] { $":pen: {signature2.PrettyPrint()}" });
     
     // verify signature
     var bobReVerified = bob.VerifySignature(data, signature2);
-    Console.WriteLine($"Successfully verified (recovered) signature? {verified}");
+    PrintPanel("Reverification", new[] { $"{(bobReVerified ? ":check_mark_button:" : ":cross_mark:")} Verified!" });
 }
 
 static DilithiumPrivateKeyParameters RecoverPrivateKeyFromExport(byte[] encodedPrivateKey, DilithiumParameters dilithiumParameters)
@@ -159,28 +150,24 @@ static void RunKyber()
     var alicePrivate = (KyberPrivateKeyParameters)aliceKeyPair.Private;
     var pubEncoded = alicePublic.GetEncoded();
     var privateEncoded = alicePrivate.GetEncoded();
-    Console.WriteLine($"Alice's Public key: {PrettyPrint(pubEncoded)}");
-    Console.WriteLine($"Alice's Private key: {PrettyPrint(privateEncoded)}");
+    PrintPanel("Alice's keys", new[] { $":unlocked: Public: {pubEncoded.PrettyPrint()}", $":locked: Private: {privateEncoded.PrettyPrint()}" });
 
     // Bob encapsulates a new shared secret using Alice's public key
     var bobKyberKemGenerator = new KyberKemGenerator(random);
     var encapsulatedSecret = bobKyberKemGenerator.GenerateEncapsulated(alicePublic);
     var bobSecret = encapsulatedSecret.GetSecret();
-    Console.WriteLine($"Bob's Secret: {PrettyPrint(bobSecret)}");
 
     // cipher text produced by Bob and sent to Alice
     var cipherText = encapsulatedSecret.GetEncapsulation();
-    Console.WriteLine($"Cipher text: {PrettyPrint(cipherText)}");
 
     // Alice decapsulates a new shared secret using Alice's private key
     var aliceKemExtractor = new KyberKemExtractor(alicePrivate);
     var aliceSecret = aliceKemExtractor.ExtractSecret(cipherText);
-    Console.WriteLine($"Alice's Secret: {PrettyPrint(aliceSecret)}");
+    PrintPanel("Key encapsulation", new[] { $":man: Bob's secret: {bobSecret.PrettyPrint()}", $":locked_with_key: Cipher text (Bob -> Alice): {cipherText.PrettyPrint()}", $":woman: Alice's secret: {aliceSecret.PrettyPrint()}" });
 
     // Compare secrets
     var equal = bobSecret.SequenceEqual(aliceSecret);
-    Console.WriteLine($"Secrets equal? {equal}");
-    Console.WriteLine("");
+    PrintPanel("Verification", new[] { $"{(equal ? ":check_mark_button:" : ":cross_mark:")} Secrets equal!" });
 }
 
 static void PrintPanel(string header, string[] data)
@@ -193,10 +180,11 @@ static void PrintPanel(string header, string[] data)
     AnsiConsole.Write(panel);
 }
 
-static string PrettyPrint(byte[] bytes) {
-    var base64 = Convert.ToBase64String(bytes);
-    if (base64.Length > 50)
-        return $"{base64[..25]}...{base64[^25..]}";
-
-    return base64;
+public static class FormatExtensions
+{
+    public static string PrettyPrint(this byte[] bytes)
+    {
+        var base64 = Convert.ToBase64String(bytes);
+        return base64.Length > 50 ? $"{base64[..25]}...{base64[^25..]}" : base64;
+    }
 }
